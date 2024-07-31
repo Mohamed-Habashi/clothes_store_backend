@@ -99,12 +99,13 @@ if($token){
                 }
             }else{
                 $add=$conn->prepare(
-                    'INSERT INTO cart (product_id,user_id) VALUES (?,?)'
+                    'INSERT INTO cart (product_price,product_id,user_id) VALUES (?,?,?)'
                 );
                 $product['in_cart']=true;
                 unset($product['in_cart']);
                 $add->execute(
                     array(
+                        $product['product_price'],
                         $product_id,
                         $user['id']
                     )

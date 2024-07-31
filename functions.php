@@ -129,3 +129,64 @@ function deleteProductImage($imageName){
     }
 
 }
+
+// get user location
+function getPublicIP() {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://api.ipify.org?format=json");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    $data = json_decode($response, true);
+    return $data['ip'];
+}
+
+function getLocationFromIP($ip) {
+    $url = "http://ipinfo.io/{$ip}/json";
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+function haversineGreatCircleDistance($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371) {
+    $latFrom = deg2rad($latitudeFrom);
+    $lonFrom = deg2rad($longitudeFrom);
+    $latTo = deg2rad($latitudeTo);
+    $lonTo = deg2rad($longitudeTo);
+
+    $latDelta = $latTo - $latFrom;
+    $lonDelta = $lonTo - $lonFrom;
+
+    $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+      cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+    return $angle * $earthRadius;
+}
+
+function getDistance($userLocation){
+    $clientIp = getPublicIP();
+        error_log("Public IP: " . $clientIp);
+
+        $locationData = getLocationFromIP($clientIp);
+        error_log("Location Data: " . json_encode($locationData));
+        if (isset($locationData['loc'])) {
+            list($lat, $lon) = explode(',', $locationData['loc']);
+            error_log("Coordinates: Lat = $lat, Lon = $lon");
+
+            list($userLat, $userLon) = explode(',', $userLocation);
+            error_log("User Coordinates: Lat = $userLat, Lon = $userLon");
+
+            // Calculate distance
+            $distance = haversineGreatCircleDistance($lat, $lon, $userLat, $userLon);
+            error_log("Distance: " . $distance . " km");
+            return $distance;
+        } else {
+            $response = array(
+                'status' => 'Error',
+                'status_message' => 'Location data not found'
+            );
+        }
+}
+
